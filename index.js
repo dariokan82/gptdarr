@@ -7,6 +7,9 @@ import addSeriesRouter from './routes/addSeries.js';
 import addMoviesRouter from './routes/addMovies.js';
 import lookupRouter from './routes/lookup.js';
 
+// Import the Overseerr module
+import Overseerr from './overseerr.js';
+
 dotenv.config();
 
 const app = express();
@@ -18,7 +21,7 @@ app.use((req, res, next) => {
 
     // OpenAI Only Block # https://platform.openai.com/docs/plugins/production/ip-egress-ranges
     if (process.env.ONLY_ALLOW_OPENAI === 'true') {
-        const allowedRanges = ['23.102.140.112/28', '13.66.11.96/28'];
+        const allowedRanges = ['23.102.140.112/28', '13.66.11.96/28']; 
         const ip = req.header('CF-Connecting-IP') || req.header('X-Forwarded-For') || req.ip;
 
         if (!ipRangeCheck(ip, allowedRanges)) {
@@ -38,11 +41,25 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
 // Routes
 app.use('/addSeries', addSeriesRouter);
-app.use('/addMovies', addMoviesRouter);
+
+// Adjusted addMoviesRouter to handle Overseerr
+app.use('/addMovies', (req, res) => {
+    const { service } = req.query; // Assume a query parameter to choose the service (radarr, sonarr, overseerr)
+
+    if (service === 'overseerr') {
+        // Call the Overseerr module for adding movies
+        Overseerr.add(req.body.title, req.body.year)
+            .then(result => res.json(result))
+            .catch(error => res.status(500).json({ error: error.message }));
+    } else {
+        // Fallback to the original addMoviesRouter for Radarr or Sonarr
+        addMoviesRouter(req, res);
+    }
+});
 
 // Lookup:
 app.use('/BulkSearchForMovieAndSeries', lookupRouter);

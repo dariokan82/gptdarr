@@ -27,11 +27,15 @@ const validateUrl = (url) => {
 
 const validateSonarrApiKey = (apiKey) => {
     // TODO: Validate API key
-
     return true;
 }
 
 const validateRadarrApiKey = (apiKey) => {
+    // TODO: Validate API key
+    return true;
+}
+
+const validateOverseerrApiKey = (apiKey) => {
     // TODO: Validate API key
     return true;
 }
@@ -163,7 +167,45 @@ const radarrQualityProfileId = radarrQualityProfiles[radarrQualityProfileIndex].
 console.log(chalk.green(`Selected quality profile: ${radarrQualityProfiles[radarrQualityProfileIndex].name}`));
 // #endregion
 
-// How the hell do language profiles work for radarr, TODO: reverse engineer this soon
+//#endregion
+
+//#region Overseerr
+const overseerrUrl = mergeUrls(ask(
+    'Enter OVERSEERR URL',
+    'The URL for your Overseerr server. Can be local or remote.',
+    'http://192.168.1.238:5055',
+    validateUrl
+), 'api/v1');
+
+const overseerrApiKey = ask('Enter OVERSEERR API Key', 'Your unique API key for Overseerr.', null, validateOverseerrApiKey);
+
+// #region Overseerr Quality Profile
+const overseerrQResponse = await fetch(`${overseerrUrl}/settings/profiles/quality`, {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-Api-Key': overseerrApiKey
+    }
+});
+
+if (overseerrQResponse.status == 401) {
+    console.log(chalk.red('Invalid API key, please try again.'));
+    process.exit();
+}
+
+if (overseerrQResponse.status != 200) {
+    console.log(chalk.red('Unexpected error occurred, please try again.'));
+    process.exit();
+}
+
+const overseerrQualityProfiles = await overseerrQResponse.json();
+const overseerrQualityProfilesNames = overseerrQualityProfiles.map((profile, index) => {
+    return `${index + 1}: ${profile.name}`;
+});
+const overseerrQualityProfileIndex = readlineSync.keyInSelect(overseerrQualityProfilesNames, 'Select a quality profile for your movies:');
+const overseerrQualityProfileId = overseerrQualityProfiles[overseerrQualityProfileIndex].id;
+console.log(chalk.green(`Selected quality profile: ${overseerrQualityProfiles[overseerrQualityProfileIndex].name}`));
+// #endregion
 
 //#endregion
 
@@ -187,6 +229,11 @@ RADARR_URL=${radarrUrl}
 RADARR_API_KEY=${radarrApiKey}
 RADARR_QUALITY_PROFILE_ID=${radarrQualityProfileId}
 RADARR_FORCE_SEARCH_ON_EXISTING=${radarrForceSearchOnExisting}
+
+[OVERSEERR]
+OVERSEERR_URL=${overseerrUrl}
+OVERSEERR_API_KEY=${overseerrApiKey}
+OVERSEERR_QUALITY_PROFILE_ID=${overseerrQualityProfileId}
 
 [SECURITY]
 ONLY_ALLOW_OPENAI=${onlyAllowOpenAI}

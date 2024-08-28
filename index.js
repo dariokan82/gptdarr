@@ -13,7 +13,7 @@ import Overseerr from './overseerr.js';
 dotenv.config();
 
 const app = express();
-const port = 8194;
+const port = 8195;
 
 // API Key Validation Middleware
 app.use((req, res, next) => {

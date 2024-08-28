@@ -1,34 +1,33 @@
 import express from 'express';
 import sonarr from '../modules/sonarr.js';
 import radarr from '../modules/radarr.js';
-import { cleanObject } from '../modules/utils.js';
+import overseerr from '../modules/overseerr.js'; // Import the Overseerr module
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
-    let { title, year } = req.query;
-    if (!title) {
-        return res.status(400).json({ message: 'title is required' });
+router.post('/', async (req, res) => {
+    const items = req.body.items;  // Could be series or movies
+    const service = req.query.service || 'sonarr'; // Default to Sonarr if no service is specified
+
+    if (!items || items.length === 0) {
+        return res.status(400).json({ message: 'Invalid request' });
     }
 
-    if (!year) {
-        year = '';
+    try {
+        let response;
+        if (service === 'overseerr') {
+            response = await overseerr.bulkAdd(items);
+        } else if (service === 'sonarr') {
+            response = await sonarr.bulkAdd(items);
+        } else if (service === 'radarr') {
+            response = await radarr.bulkAdd(items);
+        } else {
+            return res.status(400).json({ message: 'Unsupported service' });
+        }
+        return res.status(200).json(response);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
     }
-
-    const promises = [
-        sonarr.lookup(title, year),
-        radarr.lookup(title, year)
-    ];
-
-    const results = await Promise.all(promises);
-    
-    results[0] = results[0].map(cleanObject);
-    results[1] = results[1].map(cleanObject);
-
-    return res.json({
-        shows: results[0],
-        movies: results[1]
-    });
 });
 
 export default router;

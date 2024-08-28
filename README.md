@@ -3,6 +3,8 @@
 ## Description
 GPTDARR is an innovative tool designed to integrate ChatGPT's advanced capabilities with Sonarr and Radarr. It assists in adding, monitoring, and obtaining detailed information about TV shows and movies, streamlining your media management experience.
 
+THIS IS A PRIVATE FORK TO TRY AND INTEGRATE OVERSEER.
+
 ## Features
 - Easy integration with Sonarr and Radarr
 - AI-driven insights for media management
